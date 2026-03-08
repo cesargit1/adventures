@@ -16,6 +16,13 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Supabase Storage setup (profile images)
+
+- Create a Supabase Storage bucket named `user-media` (Public).
+- Add Storage RLS policies for uploads under `profiles/{uid}/...` by running:
+	- [database/storage-policies.sql](database/storage-policies.sql)
+	in Supabase Dashboard → SQL Editor.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

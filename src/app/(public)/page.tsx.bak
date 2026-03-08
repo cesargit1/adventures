@@ -1,0 +1,76 @@
+'use client'
+
+import { SearchBar } from '@/components/search/SearchBar'
+import { FilterPanel } from '@/components/search/FilterPanel'
+import { AdventureMap } from '@/components/adventure/AdventureMap'
+import { AdventureCalendar } from '@/components/adventure/AdventureCalendar'
+import { SearchResults } from '@/components/search/SearchResults'
+import { CTASection } from '@/components/common/CTASection'
+
+export default function HomePage() {
+  return (
+    <div 
+      className="min-h-screen bg-white"
+      style={{
+        backgroundImage: 'url(/bg-adventures-cal.png)',
+        backgroundAttachment: 'fixed',
+        backgroundPosition: 'center -300px',
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+      }}
+    >
+      <div className="min-h-screen bg-white/90">
+      {/* Hero Section */}
+      <div className="relative isolate overflow-hidden pt-14">
+        <div className="mx-auto max-w-6xl px-6 py-8 sm:py-10 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              Find Your Next Adventure
+            </h1>
+            <p className="mt-6 text-lg leading-8 text-gray-600">
+             Brouse outdoor events across the country and discover new experiences.
+              </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Map Section with Search and Filters */}
+      <div className="mx-auto max-w-7xl px-4 py-0 -mt-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 mb-4 lg:flex-row lg:gap-4">
+          <div className="flex-1">
+            <SearchBar />
+          </div>
+          <div className="flex-1">
+            <FilterPanel />
+          </div>
+        </div>
+        <div className="h-[460px] rounded-lg overflow-hidden border border-gray-200">
+          <AdventureMap />
+        </div>
+      </div>
+
+      {/* Calendar and Results Grid */}
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Calendar Row */}
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Upcoming Adventures</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <AdventureCalendar />
+          </div>
+        </div>
+
+        {/* Featured Adventures Row */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Featured Adventures</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <SearchResults />
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <CTASection />
+      </div>
+    </div>
+  )
+}
