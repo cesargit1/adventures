@@ -13,7 +13,6 @@ import {
 import {
   Bars3Icon,
   BellIcon,
-  ChevronDownIcon,
   UserCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
@@ -27,12 +26,6 @@ const navigationItems: { name: string; href: string }[] = [
   { name: 'How it Works', href: '/#how-it-works' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
-]
-
-const adventureLinks: { name: string; href: string }[] = [
-  { name: 'Map', href: '/' },
-  { name: 'Calendar', href: '/?view=calendar' },
-  { name: 'List', href: '/?view=list' },
 ]
 
 export function Navigation() {
@@ -133,28 +126,16 @@ export function Navigation() {
 
           {/* Center: nav links */}
           <div className="hidden sm:flex sm:self-stretch sm:space-x-8">
-              {/* Adventures dropdown */}
-              <Menu as="div" className="relative flex">
-                <MenuButton className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 focus:outline-none">
-                  Adventures
-                  <ChevronDownIcon aria-hidden="true" className="ml-1 size-4" />
-                </MenuButton>
-                <MenuItems
-                  transition
-                  className="absolute left-1/2 top-full z-10 mt-0 w-48 -translate-x-1/2 origin-top rounded-md bg-white py-1 shadow-lg outline outline-1 outline-black/5 transition data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
-                >
-                  {adventureLinks.map((item) => (
-                    <MenuItem key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
-                      >
-                        {item.name}
-                      </Link>
-                    </MenuItem>
-                  ))}
-                </MenuItems>
-              </Menu>
+              <Link
+                href="/"
+                className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium ${
+                  pathname === '/'
+                    ? 'border-gray-900 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                }`}
+              >
+                Find
+              </Link>
 
               {navigationItems.map((item) => {
                 const isActive = !item.href.includes('#') && pathname === item.href
@@ -263,19 +244,13 @@ export function Navigation() {
 
       <DisclosurePanel className="sm:hidden">
         <div className="space-y-1 pb-3 pt-2">
-          <div className="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-500">
-            Adventures
-          </div>
-          {adventureLinks.map((item) => (
-            <DisclosureButton
-              key={item.name}
-              as={Link}
-              href={item.href}
-              className="block border-l-4 border-transparent py-2 pl-6 pr-4 text-base font-medium text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700"
-            >
-              {item.name}
-            </DisclosureButton>
-          ))}
+          <DisclosureButton
+            as={Link}
+            href="/"
+            className="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700"
+          >
+            Find
+          </DisclosureButton>
           {navigationItems.map((item) => (
             <DisclosureButton
               key={item.name}

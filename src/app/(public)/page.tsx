@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import type { Metadata } from 'next'
 
 import { AdventuresExplorer, type ExplorerAdventure } from '@/components/adventure/AdventuresExplorer'
@@ -42,6 +43,12 @@ const features = [
 export default async function HomePage() {
   const supabase = await createSupabaseServerClient()
   const nowIso = new Date().toISOString()
+
+  // Detect US state from Vercel geo headers (no extra API call needed)
+  const hdrs = await headers()
+  const country = hdrs.get('x-vercel-ip-country')
+  const region  = hdrs.get('x-vercel-ip-country-region')
+  const detectedState: string | null = country === 'US' ? (region ?? null) : null
 
   type AdventureRow = {
     id: string
@@ -150,7 +157,7 @@ export default async function HomePage() {
 
       {/* Explorer: filters + view toggle + active view */}
       <Container className="py-0 -mt-4 pb-12">
-        <AdventuresExplorer adventures={adventures} />
+        <AdventuresExplorer adventures={adventures} detectedState={detectedState} />
       </Container>
 
       {/* Platform Features */}

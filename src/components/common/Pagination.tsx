@@ -32,12 +32,14 @@ export function Pagination({
   totalItems,
   pageSize,
   pathname,
+  buildHref: buildHrefProp,
 }: {
   currentPage: number
   totalPages: number
   totalItems: number
   pageSize: number
   pathname: string
+  buildHref?: (page: number) => string
 }) {
   if (totalItems <= 0) {
     return null
@@ -48,6 +50,7 @@ export function Pagination({
   const pageItems = getPageItems(currentPage, totalPages)
 
   function buildHref(page: number) {
+    if (buildHrefProp) return buildHrefProp(page)
     return page <= 1 ? pathname : `${pathname}?page=${page}`
   }
 

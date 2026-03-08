@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, Suspense, useCallback, useState, useEffect } from 'react'
+import { useMemo, Suspense, useCallback, useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { MapIcon, ListBulletIcon, CalendarDaysIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { FilterPanel } from '@/components/search/FilterPanel'
+import { Pagination } from '@/components/common/Pagination'
 import { AdventureMap } from './AdventureMap'
 import { AdventureCalendar } from './AdventureCalendar'
 import { AdventuresList } from './AdventuresList'
@@ -15,6 +16,8 @@ export type ExplorerAdventure = AdventureListItem & {
 }
 
 type ViewMode = 'map' | 'list' | 'calendar'
+
+const PAGE_SIZE = 6
 
 // State code → full name mapping (shared with FilterPanel)
 const STATE_CODE_TO_NAME: Record<string, string> = {
@@ -68,13 +71,14 @@ function ViewToggle({ current, onChange }: { current: ViewMode; onChange: (v: Vi
   )
 }
 
-function AdventuresExplorerInner({ adventures }: { adventures: ExplorerAdventure[] }) {
+function AdventuresExplorerInner({ adventures, detectedState }: { adventures: ExplorerAdventure[]; detectedState?: string | null }) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
 
   const view = (searchParams.get('view') ?? 'map') as ViewMode
-  const selectedState = searchParams.get('state')?.toUpperCase() ?? null
+  // URL param takes precedence; fall back to Vercel-detected state (US only), else null
+  const selectedState = searchParams.get('state')?.toUpperCase() ?? detectedState ?? null
   const seasons = useMemo(
     () => searchParams.get('season')?.split(',').filter(Boolean) ?? [],
     [searchParams]
@@ -89,6 +93,25 @@ function AdventuresExplorerInner({ adventures }: { adventures: ExplorerAdventure
     [searchParams]
   )
   const searchQuery = searchParams.get('q')?.toLowerCase().trim() ?? ''
+
+  // Page (URL-driven, reset to 1 when any filter changes)
+  const rawPage = Number(searchParams.get('page') ?? '1')
+  const pageParam = Number.isInteger(rawPage) && rawPage >= 1 ? rawPage : 1
+
+  // Reset page in URL whenever filter params change
+  const filterKey = [selectedState, seasons.join(','), difficulties.join(','), costFilter ?? '', adventureTypes.join(','), searchQuery].join('|')
+  const prevFilterKeyRef = useRef(filterKey)
+  useEffect(() => {
+    if (prevFilterKeyRef.current !== filterKey) {
+      prevFilterKeyRef.current = filterKey
+      const params = new URLSearchParams(searchParams.toString())
+      if (params.has('page')) {
+        params.delete('page')
+        const qs = params.toString()
+        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+      }
+    }
+  })
 
   // Local controlled value for the search input (syncs from URL if changed externally)
   const [inputQuery, setInputQuery] = useState(searchParams.get('q') ?? '')
@@ -209,7 +232,7 @@ function AdventuresExplorerInner({ adventures }: { adventures: ExplorerAdventure
   const isFiltered = activeCount !== totalCount
 
   const searchInput = (
-    <div className="relative w-full">
+    <div className="relative w-full lg:max-w-[75%]">
       <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
       <input
         type="text"
@@ -273,10 +296,10 @@ function AdventuresExplorerInner({ adventures }: { adventures: ExplorerAdventure
   )
 }
 
-export function AdventuresExplorer({ adventures }: { adventures: ExplorerAdventure[] }) {
+export function AdventuresExplorer({ adventures, detectedState }: { adventures: ExplorerAdventure[]; detectedState?: string | null }) {
   return (
     <Suspense fallback={<div className="h-[460px] flex items-center justify-center text-gray-400 text-sm">Loading…</div>}>
-      <AdventuresExplorerInner adventures={adventures} />
+      <AdventuresExplorerInner adventures={adventures} detectedState={detectedState} />
     </Suspense>
   )
 }
