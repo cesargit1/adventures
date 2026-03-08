@@ -6,11 +6,8 @@ import dotenv from 'dotenv'
 
 function loadEnv() {
   const root = process.cwd()
-  const envLocal = path.join(root, '.env.local')
   const env = path.join(root, '.env')
-
   if (fs.existsSync(env)) dotenv.config({ path: env })
-  if (fs.existsSync(envLocal)) dotenv.config({ path: envLocal, override: true })
 }
 
 function requireEnv(name) {

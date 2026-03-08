@@ -238,12 +238,7 @@ const CA_ADVENTURES = [
 function loadEnv() {
   const root = process.cwd()
   const env = path.join(root, '.env')
-  const envLocal = path.join(root, '.env.local')
-  const envDb = path.join(root, '.env.db')
-
   if (fs.existsSync(env)) dotenv.config({ path: env })
-  if (fs.existsSync(envLocal)) dotenv.config({ path: envLocal, override: true })
-  if (fs.existsSync(envDb)) dotenv.config({ path: envDb, override: true })
 }
 
 function requireEnv(name) {

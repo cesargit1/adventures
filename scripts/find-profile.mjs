@@ -5,8 +5,6 @@ const { Client } = pg
 
 function loadEnv() {
   dotenv.config({ path: '.env' })
-  dotenv.config({ path: '.env.local' })
-  dotenv.config({ path: '.env.db' })
 }
 
 function buildDbUrl() {
@@ -14,7 +12,7 @@ function buildDbUrl() {
   const password = process.env.SUPABASE_DB_PASSWORD
 
   if (!raw) {
-    throw new Error('Missing SUPABASE_DB_URL (expected in .env.db)')
+    throw new Error('Missing SUPABASE_DB_URL (expected in .env)')
   }
 
   if (raw.includes('[YOUR-PASSWORD]')) {

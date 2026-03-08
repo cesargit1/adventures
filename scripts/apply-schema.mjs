@@ -21,13 +21,8 @@ function requireEnv(name) {
 async function main() {
   {
     const root = process.cwd()
-    const envDb = path.join(root, '.env.db')
     const env = path.join(root, '.env')
-    const envLocal = path.join(root, '.env.local')
-
     if (fsSync.existsSync(env)) dotenv.config({ path: env })
-    if (fsSync.existsSync(envLocal)) dotenv.config({ path: envLocal, override: true })
-    if (fsSync.existsSync(envDb)) dotenv.config({ path: envDb, override: true })
   }
 
   let connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL
