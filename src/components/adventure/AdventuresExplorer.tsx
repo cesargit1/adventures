@@ -94,6 +94,19 @@ function AdventuresExplorerInner({ adventures, detectedState }: { adventures: Ex
   )
   const searchQuery = searchParams.get('q')?.toLowerCase().trim() ?? ''
 
+  // On mount: if Vercel detected a US state but no ?state= param is in the URL, write it in
+  // so FilterPanel shows the correct selection and filtering is visible to the user.
+  useEffect(() => {
+    if (detectedState && !searchParams.get('state')) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('state', detectedState.toUpperCase())
+      const qs = params.toString()
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    }
+    // Only run once on mount — deps intentionally omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Page (URL-driven, reset to 1 when any filter changes)
   const rawPage = Number(searchParams.get('page') ?? '1')
   const pageParam = Number.isInteger(rawPage) && rawPage >= 1 ? rawPage : 1
