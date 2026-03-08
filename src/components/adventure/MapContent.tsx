@@ -5,8 +5,28 @@ import { useEffect } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useMap } from 'react-leaflet'
+import Link from 'next/link'
 
 type ActivityIcon = 'camping' | 'hiking' | 'offroad' | 'sightseeing' | 'birdwatching' | 'rafting'
+
+export type MapAdventure = {
+  id: string
+  slug?: string | null
+  title: string
+  adventure_type: string
+  location_lat: number | null
+  location_lng: number | null
+}
+
+function adventureTypeToIcon(type: string): ActivityIcon {
+  const t = type.toLowerCase()
+  if (t.includes('camp')) return 'camping'
+  if (t.includes('hike') || t.includes('hiking') || t.includes('backpack') || t.includes('trail')) return 'hiking'
+  if (t.includes('offroad') || t.includes('off-road') || t.includes('4x4') || t.includes('overlanding') || t.includes('atv')) return 'offroad'
+  if (t.includes('raft') || t.includes('kayak') || t.includes('paddle') || t.includes('canoe')) return 'rafting'
+  if (t.includes('bird') || t.includes('wildlife') || t.includes('nature')) return 'birdwatching'
+  return 'sightseeing'
+}
 
 function getActivityIconMarkup(activity: ActivityIcon) {
   if (activity === 'camping') {
@@ -136,19 +156,15 @@ function MapViewportUpdater({ selectedStateCode }: { selectedStateCode: string |
   return null
 }
 
-export function MapContent({ selectedStateCode }: { selectedStateCode: string | null }) {
-  const locations: Array<{ name: string; position: [number, number]; activity: ActivityIcon }> = [
-    { name: 'Lake Isabella', position: [35.6180, -118.4730], activity: 'rafting' },
-    { name: 'Sequoia National Forest', position: [36.1110, -118.5620], activity: 'camping' },
-    { name: 'Sierra Nevadas', position: [37.0000, -119.0000], activity: 'hiking' },
-    { name: 'Death Valley', position: [36.5323, -116.9325], activity: 'sightseeing' },
-    { name: 'Anza Borrego', position: [33.2550, -116.3740], activity: 'offroad' },
-    { name: 'Big Bear', position: [34.2439, -116.9114], activity: 'camping' },
-    { name: 'Joshua Tree', position: [33.8734, -115.9010], activity: 'hiking' },
-    { name: 'Mt. San Jacinto State Park and Wilderness', position: [33.8145, -116.6794], activity: 'birdwatching' },
-    { name: 'Baja Dunes', position: [31.8667, -116.6667], activity: 'offroad' },
-    { name: 'Pismo Beach', position: [35.1428, -120.6413], activity: 'sightseeing' },
-  ]
+export function MapContent({ selectedStateCode, adventures = [] }: { selectedStateCode: string | null; adventures?: MapAdventure[] }) {
+  const locations = adventures
+    .filter((a) => a.location_lat != null && a.location_lng != null)
+    .map((a) => ({
+      id: a.slug ?? a.id,
+      title: a.title,
+      position: [a.location_lat!, a.location_lng!] as [number, number],
+      activity: adventureTypeToIcon(a.adventure_type),
+    }))
 
   const mapCenter: [number, number] = DEFAULT_US_CENTER
   const zoomLevel = DEFAULT_US_ZOOM
@@ -167,8 +183,15 @@ export function MapContent({ selectedStateCode }: { selectedStateCode: string | 
         />
         <MapViewportUpdater selectedStateCode={selectedStateCode} />
         {locations.map((location) => (
-          <Marker key={location.name} position={location.position} icon={markerIconByActivity[location.activity]}>
-            <Popup>{location.name}</Popup>
+          <Marker key={location.id} position={location.position} icon={markerIconByActivity[location.activity]}>
+            <Popup>
+              <Link
+                href={`/adventures/${encodeURIComponent(location.id)}`}
+                className="font-medium text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                {location.title}
+              </Link>
+            </Popup>
           </Marker>
         ))}
       </MapContainer>

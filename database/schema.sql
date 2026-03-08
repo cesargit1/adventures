@@ -260,6 +260,8 @@ create table if not exists public.adventures (
 );
 
 alter table public.adventures add column if not exists host_included text[];
+alter table public.adventures add column if not exists location_lat double precision;
+alter table public.adventures add column if not exists location_lng double precision;
 
 create index if not exists adventures_host_id_idx on public.adventures(host_id);
 create index if not exists adventures_start_at_idx on public.adventures(start_at);

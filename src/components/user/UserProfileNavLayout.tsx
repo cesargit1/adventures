@@ -43,7 +43,7 @@ export function UserProfileNavLayout({
   })
 
   return (
-    <Container className="pt-20">
+    <Container className="pt-4">
       <div className="border-b border-gray-200 py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="grid grid-cols-1 flex-1 sm:hidden">

@@ -31,8 +31,8 @@ const navigationItems: { name: string; href: string }[] = [
 
 const adventureLinks: { name: string; href: string }[] = [
   { name: 'Map', href: '/' },
-  { name: 'Calendar', href: '/#calendar' },
-  { name: 'List', href: '/adventures' },
+  { name: 'Calendar', href: '/?view=calendar' },
+  { name: 'List', href: '/?view=list' },
 ]
 
 export function Navigation() {
@@ -116,7 +116,7 @@ export function Navigation() {
   return (
     <Disclosure as="nav" className="fixed inset-x-0 top-0 z-50 bg-white shadow">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 justify-between">
+        <div className="flex h-20 justify-between">
           {/* Left: logo */}
           <div className="flex flex-1 shrink-0 items-center">
             <Link href="/">

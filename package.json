@@ -10,7 +10,8 @@
     "db:apply": "node scripts/apply-schema.mjs",
     "db:test": "node scripts/test-db-connection.mjs",
     "supabase:test": "node scripts/test-supabase-api.mjs",
-    "seed:ca": "node scripts/seed-ca-adventures.mjs"
+    "seed:ca": "node scripts/seed-ca-adventures.mjs",
+    "seed:tx": "node scripts/seed-tx-adventures.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

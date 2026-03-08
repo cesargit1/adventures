@@ -1,10 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
-import { FilterPanel } from '@/components/search/FilterPanel'
-import { AdventureMap } from '@/components/adventure/AdventureMap'
-import { AdventureCalendar } from '@/components/adventure/AdventureCalendar'
-import { AdventuresList, type AdventureListItem } from '@/components/adventure/AdventuresList'
+import { AdventuresExplorer, type ExplorerAdventure } from '@/components/adventure/AdventuresExplorer'
 import { CTASection } from '@/components/common/CTASection'
 import { Container } from '@/components/common/Container'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
@@ -60,6 +57,8 @@ export default async function HomePage() {
     location_city?: string | null
     location_state?: string | null
     location_country?: string | null
+    location_lat?: number | null
+    location_lng?: number | null
     cost_dollars?: number | null
     currency?: string | null
     max_capacity?: number | null
@@ -68,69 +67,59 @@ export default async function HomePage() {
     season?: string | null
   }
 
-  const selectWithSlug = 'id, slug, title, adventure_type, difficulty, start_at, end_at, duration_minutes, status, location_name, location_city, location_state, location_country, cost_dollars, currency, max_capacity, cover_image_path, tags, season'
-  const selectWithoutSlug = 'id, title, adventure_type, difficulty, start_at, end_at, duration_minutes, status, location_name, location_city, location_state, location_country, cost_dollars, currency, max_capacity, cover_image_path, tags, season'
+  const selectWithSlug =
+    'id, slug, title, adventure_type, difficulty, start_at, end_at, duration_minutes, status, ' +
+    'location_name, location_city, location_state, location_country, location_lat, location_lng, ' +
+    'cost_dollars, currency, max_capacity, cover_image_path, tags, season'
+  const selectWithoutSlug =
+    'id, title, adventure_type, difficulty, start_at, end_at, duration_minutes, status, ' +
+    'location_name, location_city, location_state, location_country, location_lat, location_lng, ' +
+    'cost_dollars, currency, max_capacity, cover_image_path, tags, season'
 
-  let adventuresError: string | null = null
-  let openRows: AdventureRow[] = []
+  let rows: AdventureRow[] = []
 
-  const openWithSlug = await supabase
+  const withSlug = await supabase
     .from('adventures')
     .select(selectWithSlug)
     .eq('status', 'open')
     .gte('start_at', nowIso)
     .order('start_at', { ascending: true })
+    .limit(300)
 
-  if (openWithSlug.error) {
-    const message = openWithSlug.error.message || 'Failed to load adventures.'
-    if (message.toLowerCase().includes('column') && message.toLowerCase().includes('slug')) {
-      const openWithoutSlug = await supabase
+  if (withSlug.error) {
+    const msg = withSlug.error.message ?? ''
+    if (msg.toLowerCase().includes('column') && msg.toLowerCase().includes('slug')) {
+      const withoutSlug = await supabase
         .from('adventures')
         .select(selectWithoutSlug)
         .eq('status', 'open')
         .gte('start_at', nowIso)
         .order('start_at', { ascending: true })
-
-      if (openWithoutSlug.error) {
-        adventuresError = openWithoutSlug.error.message
-      } else {
-        openRows = (openWithoutSlug.data as unknown as AdventureRow[]) ?? []
-      }
-    } else {
-      adventuresError = message
+        .limit(300)
+      rows = (withoutSlug.data as unknown as AdventureRow[]) ?? []
     }
   } else {
-    openRows = (openWithSlug.data as unknown as AdventureRow[]) ?? []
+    rows = (withSlug.data as unknown as AdventureRow[]) ?? []
   }
 
-  // Fetch adventures for the calendar (all open adventures with a start_at)
-  const { data: calendarAdventures } = await supabase
-    .from('adventures')
-    .select('id, slug, title, start_at')
-    .eq('status', 'open')
-    .gte('start_at', nowIso)
-    .order('start_at', { ascending: true })
-    .limit(200)
-
+  // Signup counts
   const signupCountMap = new Map<string, number>()
-  const openIds = openRows.map((adventure) => adventure.id)
-
-  if (openIds.length > 0) {
+  const ids = rows.map((r) => r.id)
+  if (ids.length > 0) {
     const { data: signups } = await supabase
       .from('adventure_signups')
       .select('adventure_id')
-      .in('adventure_id', openIds)
+      .in('adventure_id', ids)
       .in('status', ['active', 'pending_payment'])
-
-    for (const signup of (signups ?? []) as Array<{ adventure_id: string }>) {
-      signupCountMap.set(signup.adventure_id, (signupCountMap.get(signup.adventure_id) ?? 0) + 1)
+    for (const s of (signups ?? []) as Array<{ adventure_id: string }>) {
+      signupCountMap.set(s.adventure_id, (signupCountMap.get(s.adventure_id) ?? 0) + 1)
     }
   }
 
-  const featuredResults: AdventureListItem[] = (adventuresError ? [] : openRows).map((adventure) => ({
-    ...adventure,
-    signup_count: signupCountMap.get(adventure.id) ?? 0,
-  })).slice(0, 5)
+  const adventures: ExplorerAdventure[] = rows.map((r) => ({
+    ...r,
+    signup_count: signupCountMap.get(r.id) ?? 0,
+  }))
 
   return (
     <div
@@ -153,51 +142,15 @@ export default async function HomePage() {
               Find Your Next Adventure
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600">
-              Brouse outdoor events across the country and discover new experiences.
+              Browse outdoor events across the country and discover new experiences.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Map Section with Filters */}
-      <Container className="py-0 -mt-4">
-        <div className="flex justify-end mb-4">
-          <div className="w-full lg:w-auto">
-            <FilterPanel />
-          </div>
-        </div>
-        <div className="h-[460px] rounded-lg overflow-hidden border border-gray-200">
-          <AdventureMap />
-        </div>
-      </Container>
-
-      {/* Calendar and Results Grid */}
-      <Container className="py-12">
-        {/* Calendar Row */}
-        <div id="calendar" className="mb-12 scroll-mt-24">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Adventures Calendar</h2>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <AdventureCalendar adventures={calendarAdventures ?? []} />
-          </div>
-        </div>
-
-        {/* Featured Adventures Row */}
-        <div>
-          <AdventuresList
-            adventures={featuredResults}
-            error={adventuresError}
-            title="Upcoming Adventures"
-            description="Showing 5 upcoming adventures."
-            emptyMessage="No open adventures are scheduled right now."
-            showSearchBar
-            actionsMode="view"
-          />
-          <div className="mt-6 flex justify-end">
-            <Link href="/adventures" className="text-sm font-semibold text-black hover:text-gray-700">
-              Browse all adventures -&gt;
-            </Link>
-          </div>
-        </div>
+      {/* Explorer: filters + view toggle + active view */}
+      <Container className="py-0 -mt-4 pb-12">
+        <AdventuresExplorer adventures={adventures} />
       </Container>
 
       {/* Platform Features */}
@@ -229,3 +182,4 @@ export default async function HomePage() {
     </div>
   )
 }
+

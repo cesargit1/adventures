@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Container } from '@/components/common/Container'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   Dialog,
@@ -10,10 +9,6 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
   Popover,
   PopoverButton,
   PopoverGroup,
@@ -21,13 +16,6 @@ import {
 } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { CheckIcon, ChevronDownIcon } from '@heroicons/react/20/solid'
-
-const sortOptions = [
-  { name: 'Most Popular', href: '#' },
-  { name: 'Best Rating', href: '#' },
-  { name: 'Newest', href: '#' },
-  { name: 'Closest', href: '#' },
-]
 
 const seasonOptions = [
   { value: 'spring', label: 'Spring' },
@@ -90,6 +78,14 @@ const stateOptions = [
   { value: 'WY', label: 'Wyoming' },
 ]
 
+// Map filter section id → URL param name
+const FILTER_PARAM: Record<string, string> = {
+  season: 'season',
+  difficulty: 'difficulty',
+  cost: 'cost',
+  adventure_type: 'type',
+}
+
 const filters = [
   {
     id: 'state',
@@ -120,7 +116,7 @@ const filters = [
   },
   {
     id: 'adventure_type',
-    name: 'Adventure Type',
+    name: 'Type',
     options: [
       { value: 'hiking', label: 'Hiking' },
       { value: 'camping', label: 'Camping' },
@@ -135,7 +131,14 @@ const filters = [
   },
 ]
 
-export function FilterPanel() {
+type FilterPanelProps = {
+  /** Optional element rendered to the LEFT of the filters (e.g., a search input). */
+  leftSlot?: React.ReactNode
+  /** Optional element rendered to the RIGHT of the filters (e.g., a view toggle). */
+  viewToggle?: React.ReactNode
+}
+
+export function FilterPanel({ leftSlot, viewToggle }: FilterPanelProps) {
   const [open, setOpen] = useState(false)
   const [selectedState, setSelectedState] = useState<(typeof stateOptions)[number] | null>(stateOptions[0])
   const [stateQuery, setStateQuery] = useState('')
@@ -143,6 +146,38 @@ export function FilterPanel() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // ── Multi-value URL param helpers ─────────────────────────────────────────
+  const getActiveValues = (paramName: string): string[] =>
+    searchParams.get(paramName)?.split(',').filter(Boolean) ?? []
+
+  const isActiveValue = (paramName: string, value: string): boolean =>
+    getActiveValues(paramName).includes(value)
+
+  const toggleMultiFilter = (paramName: string, value: string) => {
+    const current = getActiveValues(paramName)
+    const next = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value]
+    const params = new URLSearchParams(searchParams.toString())
+    if (next.length > 0) {
+      params.set(paramName, next.join(','))
+    } else {
+      params.delete(paramName)
+    }
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
+
+  const activeCountForSection = (section: (typeof filters)[number]): number => {
+    if (section.id === 'state') {
+      return selectedState && selectedState.value !== 'USA' ? 1 : 0
+    }
+    const paramName = FILTER_PARAM[section.id]
+    if (!paramName) return 0
+    return getActiveValues(paramName).length
+  }
+
+  // ── State filter helpers ──────────────────────────────────────────────────
   useEffect(() => {
     const stateCode = searchParams.get('state')?.toUpperCase()
     if (!stateCode) {
@@ -150,7 +185,6 @@ export function FilterPanel() {
       setStateQuery('')
       return
     }
-
     const matchingState = stateOptions.find((option) => option.value === stateCode) ?? null
     setSelectedState(matchingState)
     setStateQuery(matchingState?.value === 'USA' ? '' : (matchingState?.label ?? ''))
@@ -176,14 +210,12 @@ export function FilterPanel() {
   const handleStateChange = (value: (typeof stateOptions)[number] | null) => {
     setSelectedState(value)
     setStateQuery(value?.value === 'USA' ? '' : (value?.label ?? ''))
-
     const nextParams = new URLSearchParams(searchParams.toString())
     if (value?.value && value.value !== 'USA') {
       nextParams.set('state', value.value)
     } else {
       nextParams.delete('state')
     }
-
     const nextQuery = nextParams.toString()
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
   }
@@ -196,30 +228,129 @@ export function FilterPanel() {
   const applyStateFromQuery = () => {
     const query = stateQuery.trim().toLowerCase()
     if (!query) return
-
     const exactMatch = stateOptions.find(
-      (state) => state.label.toLowerCase() === query || state.value.toLowerCase() === query
+      (s) => s.label.toLowerCase() === query || s.value.toLowerCase() === query
     )
     const startsWithMatch = stateOptions.find(
-      (state) => state.label.toLowerCase().startsWith(query) || state.value.toLowerCase().startsWith(query)
+      (s) => s.label.toLowerCase().startsWith(query) || s.value.toLowerCase().startsWith(query)
     )
-    const includesMatch = stateOptions.find((state) => state.label.toLowerCase().includes(query))
-    const matchingState = exactMatch ?? startsWithMatch ?? includesMatch
+    const includesMatch = stateOptions.find((s) => s.label.toLowerCase().includes(query))
+    const match = exactMatch ?? startsWithMatch ?? includesMatch
+    if (match) handleStateChange(match)
+  }
 
-    if (matchingState) {
-      handleStateChange(matchingState)
-    }
+  // ── Shared checkbox renderer ───────────────────────────────────────────────
+  function renderCheckboxes(section: (typeof filters)[number], idPrefix: string) {
+    const paramName = FILTER_PARAM[section.id]
+    if (!paramName) return null
+    return (
+      <div className="space-y-3">
+        {section.options.map((option, optionIdx) => {
+          const checked = isActiveValue(paramName, option.value)
+          const inputId = `${idPrefix}-${section.id}-${optionIdx}`
+          return (
+            <div key={option.value} className="flex gap-3">
+              <div className="flex h-5 shrink-0 items-center">
+                <div className="group grid size-4 grid-cols-1">
+                  <input
+                    id={inputId}
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleMultiFilter(paramName, option.value)}
+                    className="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-black checked:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                  />
+                  <svg
+                    fill="none"
+                    viewBox="0 0 14 14"
+                    className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white"
+                  >
+                    <path
+                      d="M3 8L6 11L11 3.5"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={checked ? 'opacity-100' : 'opacity-0'}
+                    />
+                  </svg>
+                </div>
+              </div>
+              <label htmlFor={inputId} className="cursor-pointer whitespace-nowrap pr-4 text-sm text-gray-900">
+                {option.label}
+              </label>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  // ── State panel ────────────────────────────────────────────────────────────
+  function renderStatePanel() {
+    return (
+      <div className="relative w-[11.5rem]">
+        <div className="relative">
+          <input
+            aria-label="State"
+            value={stateQuery}
+            autoFocus
+            onChange={(e) => setStateQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                applyStateFromQuery()
+              }
+            }}
+            placeholder="Enter State"
+            className="block w-full rounded-md bg-white px-3 py-1.5 pr-10 text-sm/6 text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-black"
+          />
+          {(stateQuery || selectedState?.value !== 'USA') ? (
+            <button
+              type="button"
+              aria-label="Clear state"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleClearState}
+              className="absolute right-2 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-gray-400 hover:text-gray-600"
+            >
+              <XMarkIcon aria-hidden="true" className="size-4" />
+            </button>
+          ) : null}
+        </div>
+        {!isSelectedStateQueryMatch ? (
+          <div className="mt-2 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg outline outline-1 outline-black/5">
+            {filteredStateOptions.length ? (
+              filteredStateOptions.map((state) => (
+                <button
+                  key={state.value}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleStateChange(state)}
+                  className="group relative block w-full cursor-default select-none py-2 pl-3 pr-9 text-left text-gray-900 hover:bg-black hover:text-white"
+                >
+                  <span className="block truncate font-normal">{state.label}</span>
+                  {state.value === selectedState?.value ? (
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-black group-hover:text-white">
+                      <CheckIcon aria-hidden="true" className="size-5" />
+                    </span>
+                  ) : null}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-sm text-gray-500">No matching states</div>
+            )}
+          </div>
+        ) : null}
+      </div>
+    )
   }
 
   return (
     <div>
-      {/* Mobile filter dialog */}
+      {/* ── Mobile filter dialog ─────────────────────────────────────────── */}
       <Dialog open={open} onClose={setOpen} className="relative z-40 sm:hidden">
         <DialogBackdrop
           transition
           className="fixed inset-0 bg-black/25 transition-opacity duration-300 ease-linear data-[closed]:opacity-0"
         />
-
         <div className="fixed inset-0 z-40 flex">
           <DialogPanel
             transition
@@ -237,8 +368,6 @@ export function FilterPanel() {
                 <XMarkIcon aria-hidden="true" className="size-6" />
               </button>
             </div>
-
-            {/* Filters */}
             <form className="mt-4">
               {filters.map((section) => (
                 <Disclosure key={section.name} as="div" className="border-t border-gray-200 px-4 py-6">
@@ -253,107 +382,8 @@ export function FilterPanel() {
                       </span>
                     </DisclosureButton>
                   </h3>
-                  <DisclosurePanel className="pt-6">
-                    {section.id === 'state' ? (
-                      <div className="relative">
-                        <div className="relative">
-                          <input
-                            aria-label="State"
-                            value={stateQuery}
-                            autoFocus
-                            onChange={(event) => setStateQuery(event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault()
-                                applyStateFromQuery()
-                              }
-                            }}
-                            placeholder="Enter State"
-                            className="block w-full rounded-md bg-white px-3 py-1.5 pr-10 text-sm/6 text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-black"
-                          />
-                          {(stateQuery || selectedState?.value !== 'USA') ? (
-                            <button
-                              type="button"
-                              aria-label="Clear state"
-                              onMouseDown={(event) => event.preventDefault()}
-                              onClick={handleClearState}
-                              className="absolute right-2 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-gray-400 hover:text-gray-600"
-                            >
-                              <XMarkIcon aria-hidden="true" className="size-4" />
-                            </button>
-                          ) : null}
-                        </div>
-
-                        {!isSelectedStateQueryMatch ? (
-                          <div className="mt-2 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg outline outline-1 outline-black/5">
-                            {filteredStateOptions.length ? (
-                              filteredStateOptions.map((state) => (
-                                <button
-                                  key={state.value}
-                                  type="button"
-                                  onMouseDown={(event) => event.preventDefault()}
-                                  onClick={() => handleStateChange(state)}
-                                  className="group relative block w-full cursor-default select-none py-2 pl-3 pr-9 text-left text-gray-900 hover:bg-black hover:text-white"
-                                >
-                                  <span className="block truncate font-normal">
-                                    {state.label}
-                                  </span>
-                                  {state.value === 'USA' && selectedState?.value === 'USA' ? (
-                                    <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-black group-hover:text-white">
-                                      <CheckIcon aria-hidden="true" className="size-5" />
-                                    </span>
-                                  ) : null}
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-3 py-2 text-sm text-gray-500">No matching states</div>
-                            )}
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {section.options.map((option, optionIdx) => (
-                          <div key={option.value} className="flex gap-3">
-                            <div className="flex h-5 shrink-0 items-center">
-                              <div className="group grid size-4 grid-cols-1">
-                                <input
-                                  defaultValue={option.value}
-                                  defaultChecked={section.id === 'cost'}
-                                  id={`filter-mobile-${section.id}-${optionIdx}`}
-                                  name={`${section.id}[]`}
-                                  type="checkbox"
-                                  className="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-black checked:bg-black indeterminate:border-black indeterminate:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto"
-                                />
-                                <svg
-                                  fill="none"
-                                  viewBox="0 0 14 14"
-                                  className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25"
-                                >
-                                  <path
-                                    d="M3 8L6 11L11 3.5"
-                                    strokeWidth={2}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="opacity-0 group-has-[:checked]:opacity-100"
-                                  />
-                                  <path
-                                    d="M3 7H11"
-                                    strokeWidth={2}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="opacity-0 group-has-[:indeterminate]:opacity-100"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <label htmlFor={`filter-mobile-${section.id}-${optionIdx}`} className="text-sm text-gray-500">
-                              {option.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <DisclosurePanel className="pt-4">
+                    {section.id === 'state' ? renderStatePanel() : renderCheckboxes(section, 'mobile')}
                   </DisclosurePanel>
                 </Disclosure>
               ))}
@@ -362,162 +392,58 @@ export function FilterPanel() {
         </div>
       </Dialog>
 
-      <Container>
-        <section aria-labelledby="filter-heading" className="border-b border-gray-200 py-6">
-          <h2 id="filter-heading" className="sr-only">
-            Adventure filters
-          </h2>
+      {/* ── Desktop filter bar ───────────────────────────────────────────── */}
+      <section aria-labelledby="filter-heading" className="border-b border-gray-200 py-4">
+        <h2 id="filter-heading" className="sr-only">Adventure filters</h2>
 
-          <div className="flex items-center justify-between sm:justify-end">
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="inline-block text-sm font-medium text-gray-700 hover:text-gray-900 sm:hidden"
-            >
-              Filters
-            </button>
+        <div className="flex items-center gap-4">
+          {/* Left slot (e.g. search) — grows to fill available space */}
+          {leftSlot ? <div className="flex-1 min-w-0">{leftSlot}</div> : null}
 
-            <PopoverGroup className="hidden sm:flex sm:items-baseline sm:space-x-8 sm:justify-end">
-              {filters.map((section, sectionIdx) => (
-                <Popover key={section.name} className="relative inline-block text-left">
-                  <div>
-                    <PopoverButton className="group inline-flex items-center justify-center text-sm font-medium text-gray-700 hover:text-gray-900">
-                      <span>{section.name}</span>
-                      {section.id === 'state' && selectedState ? (
-                        <span
-                          className={`ml-1.5 rounded bg-gray-200 px-1.5 py-0.5 text-xs font-semibold tabular-nums ${
-                            selectedState.value === 'USA' ? 'text-gray-700' : 'text-black'
-                          }`}
-                        >
-                          {selectedState.value === 'USA' ? 'ALL' : selectedState.value}
-                        </span>
-                      ) : null}
-                      {section.id === 'cost' ? (
-                        <span className="ml-1.5 rounded bg-gray-200 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-gray-700">
-                          2
-                        </span>
-                      ) : null}
-                      <ChevronDownIcon
-                        aria-hidden="true"
-                        className="-mr-1 ml-1 size-5 shrink-0 text-gray-400 group-hover:text-gray-500"
-                      />
-                    </PopoverButton>
-                  </div>
+          {/* Mobile: "Filters" button */}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 sm:hidden"
+          >
+            <ChevronDownIcon className="size-4" />
+            Filters
+          </button>
+
+          {/* Desktop: filter popovers — pushed to the right */}
+          <PopoverGroup className="hidden sm:flex sm:flex-shrink-0 sm:items-center sm:gap-x-6">
+            {filters.map((section) => {
+              const activeCount = activeCountForSection(section)
+              return (
+                <Popover key={section.name} className="relative">
+                  <PopoverButton className="group inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                    <span>{section.name}</span>
+                    {activeCount > 0 ? (
+                      <span className="ml-1 rounded bg-black px-1.5 py-0.5 text-xs font-semibold text-white tabular-nums">
+                        {activeCount}
+                      </span>
+                    ) : null}
+                    <ChevronDownIcon
+                      aria-hidden="true"
+                      className="-mr-1 size-5 shrink-0 text-gray-400 group-hover:text-gray-500"
+                    />
+                  </PopoverButton>
 
                   <PopoverPanel
                     transition
-                    className="absolute right-0 z-10 mt-2 origin-top-right rounded-md bg-white p-4 shadow-2xl ring-1 ring-black/5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
+                    className="absolute left-0 z-10 mt-2 origin-top-left rounded-md bg-white p-4 shadow-2xl ring-1 ring-black/5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
                   >
-                    {section.id === 'state' ? (
-                      <div className="relative w-[11.5rem]">
-                        <div className="relative">
-                          <input
-                            aria-label="State"
-                            value={stateQuery}
-                            autoFocus
-                            onChange={(event) => setStateQuery(event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault()
-                                applyStateFromQuery()
-                              }
-                            }}
-                            placeholder="Enter State"
-                            className="block w-full rounded-md bg-white px-3 py-1.5 pr-10 text-sm/6 text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-black"
-                          />
-                          {(stateQuery || selectedState?.value !== 'USA') ? (
-                            <button
-                              type="button"
-                              aria-label="Clear state"
-                              onMouseDown={(event) => event.preventDefault()}
-                              onClick={handleClearState}
-                              className="absolute right-2 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-gray-400 hover:text-gray-600"
-                            >
-                              <XMarkIcon aria-hidden="true" className="size-4" />
-                            </button>
-                          ) : null}
-                        </div>
-
-                        {!isSelectedStateQueryMatch ? (
-                          <div className="mt-2 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg outline outline-1 outline-black/5">
-                            {filteredStateOptions.length ? (
-                              filteredStateOptions.map((state) => (
-                                <button
-                                  key={state.value}
-                                  type="button"
-                                  onMouseDown={(event) => event.preventDefault()}
-                                  onClick={() => handleStateChange(state)}
-                                  className="group relative block w-full cursor-default select-none py-2 pl-3 pr-9 text-left text-gray-900 hover:bg-black hover:text-white"
-                                >
-                                  <span className="block truncate font-normal">
-                                    {state.label}
-                                  </span>
-                                  {state.value === 'USA' && selectedState?.value === 'USA' ? (
-                                    <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-black group-hover:text-white">
-                                      <CheckIcon aria-hidden="true" className="size-5" />
-                                    </span>
-                                  ) : null}
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-3 py-2 text-sm text-gray-500">No matching states</div>
-                            )}
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <form className="space-y-4">
-                        {section.options.map((option, optionIdx) => (
-                          <div key={option.value} className="flex gap-3">
-                            <div className="flex h-5 shrink-0 items-center">
-                              <div className="group grid size-4 grid-cols-1">
-                                <input
-                                  defaultValue={option.value}
-                                  defaultChecked={section.id === 'cost'}
-                                  id={`filter-${section.id}-${optionIdx}`}
-                                  name={`${section.id}[]`}
-                                  type="checkbox"
-                                  className="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-black checked:bg-black indeterminate:border-black indeterminate:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto"
-                                />
-                                <svg
-                                  fill="none"
-                                  viewBox="0 0 14 14"
-                                  className="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25"
-                                >
-                                  <path
-                                    d="M3 8L6 11L11 3.5"
-                                    strokeWidth={2}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="opacity-0 group-has-[:checked]:opacity-100"
-                                  />
-                                  <path
-                                    d="M3 7H11"
-                                    strokeWidth={2}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="opacity-0 group-has-[:indeterminate]:opacity-100"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <label
-                              htmlFor={`filter-${section.id}-${optionIdx}`}
-                              className="whitespace-nowrap pr-6 text-sm font-medium text-gray-900"
-                            >
-                              {option.label}
-                            </label>
-                          </div>
-                        ))}
-                      </form>
-                    )}
+                    {section.id === 'state' ? renderStatePanel() : renderCheckboxes(section, 'desktop')}
                   </PopoverPanel>
                 </Popover>
-              ))}
-            </PopoverGroup>
-          </div>
-        </section>
-      </Container>
+              )
+            })}
+          </PopoverGroup>
+
+          {/* Right slot: view toggle */}
+          {viewToggle ? <div className="flex-shrink-0">{viewToggle}</div> : null}
+        </div>
+      </section>
     </div>
   )
 }

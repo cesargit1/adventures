@@ -512,8 +512,8 @@ export function AdventureDetails({
 
   return (
     <main>
-      <header className="relative isolate pt-16">
-        <Container className="py-10">
+      <header className="relative isolate">
+        <Container className="py-8">
           <div className="flex items-center justify-between gap-x-8 lg:mx-0 lg:max-w-none">
             <div className="flex items-center gap-x-6">
               <h1>

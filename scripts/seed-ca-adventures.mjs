@@ -312,17 +312,16 @@ async function getHostIdsPg(client) {
   const { rows } = await client.query(
     `select id, username
      from public.profiles
-     where username in ('ceez', 'danny')`
+     where username = 'cheech'`
   )
 
-  const ceez = rows.find((row) => row.username === 'ceez')
-  const danny = rows.find((row) => row.username === 'danny')
+  const cheech = rows.find((row) => row.username === 'cheech')
 
-  if (!ceez || !danny) {
-    throw new Error('Could not find both profiles: ceez and danny')
+  if (!cheech) {
+    throw new Error('Could not find profile: cheech')
   }
 
-  return [ceez.id, danny.id]
+  return [cheech.id]
 }
 
 async function upsertAdventurePg({ client, hostId, draft }) {
@@ -357,6 +356,8 @@ async function upsertAdventurePg({ client, hostId, draft }) {
            location_country = $17,
            location_country_code = $18,
            location_precise_point = ST_SetSRID(ST_MakePoint($19, $20), 4326)::geography,
+           location_lat = $20,
+           location_lng = $19,
            max_capacity = $21,
            cost_dollars = $22,
            currency = 'USD',
@@ -400,14 +401,14 @@ async function upsertAdventurePg({ client, hostId, draft }) {
        host_id, title, title_slug, description, adventure_type, difficulty,
        required_gear, host_included, tags, start_at, end_at, duration_minutes,
        season, location_name, location_city, location_state, location_country,
-       location_country_code, location_precise_point,
+       location_country_code, location_precise_point, location_lat, location_lng,
        max_capacity, cost_dollars, currency,
        status, participant_visibility, submitted_at
      ) values (
        $1, $2, $3, $4, $5, $6,
        $7, $8, $9, $10, $11, $12,
        $13, $14, $15, $16, $17,
-       $18, ST_SetSRID(ST_MakePoint($19, $20), 4326)::geography,
+       $18, ST_SetSRID(ST_MakePoint($19, $20), 4326)::geography, $20, $19,
        $21, $22, 'USD',
        'open', 'public', $23
      )
@@ -453,18 +454,17 @@ async function getHostIds(supabase) {
   const { data, error } = await supabase
     .from('profiles')
     .select('id,username')
-    .in('username', ['ceez', 'danny'])
+    .eq('username', 'cheech')
 
   if (error) throw new Error(`Failed loading host profiles: ${error.message}`)
 
-  const ceez = data?.find((row) => row.username === 'ceez')
-  const danny = data?.find((row) => row.username === 'danny')
+  const cheech = data?.[0]
 
-  if (!ceez || !danny) {
-    throw new Error('Could not find both profiles: ceez and danny')
+  if (!cheech) {
+    throw new Error('Could not find profile: cheech')
   }
 
-  return [ceez.id, danny.id]
+  return [cheech.id]
 }
 
 async function upsertAdventure({ supabase, hostId, draft }) {

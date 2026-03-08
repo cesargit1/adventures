@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import type { MapAdventure } from './MapContent'
 
 const MapContent = dynamic(
   () => import('./MapContent.tsx').then((mod) => mod.MapContent),
@@ -16,7 +17,7 @@ const MapContent = dynamic(
   }
 )
 
-export function AdventureMap() {
+export function AdventureMap({ adventures }: { adventures?: MapAdventure[] }) {
   const searchParams = useSearchParams()
   const selectedStateCode = searchParams.get('state')?.toUpperCase() ?? null
 
@@ -28,7 +29,7 @@ export function AdventureMap() {
         </div>
       }
     >
-      <MapContent selectedStateCode={selectedStateCode} />
+      <MapContent selectedStateCode={selectedStateCode} adventures={adventures} />
     </Suspense>
   )
 }
