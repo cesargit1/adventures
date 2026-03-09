@@ -77,8 +77,8 @@ function AdventuresExplorerInner({ adventures, detectedState }: { adventures: Ex
   const pathname = usePathname()
 
   const view = (searchParams.get('view') ?? 'map') as ViewMode
-  // URL param takes precedence; fall back to Vercel-detected state (US only), else null
-  const selectedState = searchParams.get('state')?.toUpperCase() ?? detectedState ?? null
+  // Always read state strictly from URL — detectedState is written to URL on mount only
+  const selectedState = searchParams.get('state')?.toUpperCase() ?? null
   const seasons = useMemo(
     () => searchParams.get('season')?.split(',').filter(Boolean) ?? [],
     [searchParams]
