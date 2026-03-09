@@ -1,3 +1,11 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'About - AdventuresCalendar',
+  description:
+    'Learn about AdventuresCalendar and our mission to help people find and host their next outdoor adventure.',
+}
+
 export default function AboutPage() {
   return (
     <div className="overflow-hidden bg-white py-24 sm:py-32">

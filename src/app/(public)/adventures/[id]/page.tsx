@@ -12,9 +12,22 @@ export async function generateMetadata({
   const { id } = await params
   const decoded = decodeURIComponent(id)
 
+  // Try to fetch the adventure title for a better meta title
+  const supabase = await createSupabaseServerClient()
+  const { data } = await supabase
+    .from('adventures')
+    .select('title, location_city, location_state')
+    .or(`id.eq.${decoded},slug.eq.${decoded}`)
+    .single()
+
+  const title = data?.title ?? `Adventure ${decoded}`
+  const location = [data?.location_city, data?.location_state].filter(Boolean).join(', ')
+
   return {
-    title: `Adventure ${decoded} - AdventuresCalendar`,
-    description: `View details, location, and schedule for adventure ${decoded} on AdventuresCalendar.`,
+    title: `${title} - AdventuresCalendar`,
+    description: location
+      ? `Join ${title} in ${location}. View details, schedule, and sign up on AdventuresCalendar.`
+      : `View details, location, and schedule for ${title} on AdventuresCalendar.`,
   }
 }
 

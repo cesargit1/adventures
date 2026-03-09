@@ -1,4 +1,11 @@
+import type { Metadata } from 'next'
 import { BuildingOffice2Icon, EnvelopeIcon, PhoneIcon } from '@heroicons/react/24/outline'
+
+export const metadata: Metadata = {
+  title: 'Contact - AdventuresCalendar',
+  description:
+    'Get in touch with the AdventuresCalendar team. We’d love to hear from you.',
+}
 
 export default function ContactPage() {
   return (

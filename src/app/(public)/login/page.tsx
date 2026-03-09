@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 
 export const metadata = {
   title: 'Sign In - AdventuresCalendar',
-  description: 'Sign in to your AdventuresCalendar account',
+  description: 'Sign in to your AdventuresCalendar account to join and host outdoor adventures.',
 }
 
 export default function LoginPage() {

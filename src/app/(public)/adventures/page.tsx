@@ -7,8 +7,9 @@ import { Pagination } from '@/components/common/Pagination'
 import { getPublicAdventuresPage, PUBLIC_ADVENTURES_PAGE_SIZE } from '@/lib/adventures'
 
 export const metadata: Metadata = {
-  title: 'Adventures - AdventuresCalendar',
-  description: 'Browse all open upcoming adventures on AdventuresCalendar.',
+  title: 'Search Adventures - AdventuresCalendar',
+  description:
+    'Search all open upcoming outdoor adventures. Filter by state, season, difficulty, and cost to find the right trip.',
 }
 
 function parsePage(value: string | string[] | undefined) {

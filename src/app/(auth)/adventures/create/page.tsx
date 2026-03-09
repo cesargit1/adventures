@@ -3,7 +3,7 @@ import { UserProfileNavLayout } from '@/components/user/UserProfileNavLayout'
 
 export const metadata = {
   title: 'Create Adventure - AdventuresCalendar',
-  description: 'Create a new outdoor adventure',
+  description: 'Create and publish a new outdoor adventure for others to find, join, and experience.',
 }
 
 export default function CreateAdventurePage() {

@@ -2,7 +2,7 @@ import { SignupForm } from '@/components/auth/SignupForm'
 
 export const metadata = {
   title: 'Create Account - AdventuresCalendar',
-  description: 'Create your AdventuresCalendar account',
+  description: 'Create your free AdventuresCalendar account and start finding and joining outdoor adventures.',
 }
 
 export default function SignupPage() {

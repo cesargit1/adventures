@@ -8,17 +8,17 @@ import { Container } from '@/components/common/Container'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
-  title: 'Find Your Next Adventure - AdventuresCalendar',
+  title: 'Search Your Next Adventure - AdventuresCalendar',
   description:
-    'Browse outdoor adventures on the map and calendar. Filter by season, cost, and difficulty to find the right trip.',
+    'AdventuresCalendar - Find Your Next Outdoor Adventure. Search trips on the map, calendar, or list and filter by state, season, difficulty, and cost.',
 }
 
 const features = [
   {
     step: 1,
-    name: 'Browse Adventures',
+    name: 'Search Adventures',
     description:
-      'Explore upcoming trips on the map and calendar, then filter by season, cost, and difficulty to find the right fit.',
+      'Search upcoming trips on the map, calendar, or list view. Filter by state, season, cost, and difficulty to find the right fit.',
   },
   {
     step: 2,
@@ -36,7 +36,7 @@ const features = [
     step: 4,
     name: 'Host Your Own Adventures',
     description:
-      'Bookmark favorites for later, and when you’re ready, create your own adventure to bring people together.',
+      'When you’re ready to lead, create your own adventure and bring people together for an unforgettable experience.',
   },
 ]
 
@@ -143,7 +143,7 @@ export default async function HomePage() {
     >
       {/* Hero Section */}
       <div className="relative isolate overflow-hidden pt-14">
-        <div className="mx-auto max-w-6xl px-6 py-8 sm:py-10 lg:px-8">
+        <div className="mx-auto max-w-6xl px-6 py-4 sm:py-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">
               Find Your Next Adventure
