@@ -11,7 +11,7 @@ export function Footer() {
             <p className="text-sm text-gray-600">Discover and join outdoor adventure events near you.</p>
           </div>
           <div>
-            <h3 className="text-gray-900 font-semibold mb-4">Search Adventures</h3>
+            <h3 className="text-gray-900 font-semibold mb-4">Adventures</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/" className="text-gray-600 hover:text-black">

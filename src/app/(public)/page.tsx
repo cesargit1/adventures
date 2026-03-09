@@ -8,9 +8,9 @@ import { Container } from '@/components/common/Container'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
-  title: 'Search Your Next Adventure - AdventuresCalendar',
+  title: 'AdventuresCalendar - Find Your Next Outdoor Adventures',
   description:
-    'AdventuresCalendar - Find Your Next Outdoor Adventure. Search trips on the map, calendar, or list and filter by state, season, difficulty, and cost.',
+    'Search, join, and create outdoor adventures like hiking, camping, climbing, kayaking, and more. Find upcoming trips near you and connect with adventurers across the country.',
 }
 
 const features = [
@@ -146,7 +146,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-4 sm:py-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-              Find Your Next Adventure
+              Find Your Next Adventures
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600">
               Browse outdoor events across the country and discover new experiences.
